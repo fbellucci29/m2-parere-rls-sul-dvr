@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>M2 · Il parere dell'RLS sul DVR aggiornato</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e9edf2;font-family:"Segoe UI",Arial,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh}
+  #game{position:relative;width:800px;height:550px;background:#f7f9fb;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+  header{height:56px;background:#1f3a5f;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+  header h1{font-size:18px;font-weight:600}
+  header .score{font-size:13px;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:14px}
+  .phase{position:absolute;left:0;top:56px;width:800px;height:494px;padding:10px 16px}
+  .brief{font-size:12.5px;color:#33475b;line-height:1.4;margin-bottom:8px}
+  .doc{background:#fff;border:1px solid #c9d3de;border-radius:6px;padding:6px 10px;height:362px;overflow:auto}
+  .doc h3{font-size:12.5px;color:#1f3a5f;border-bottom:1px solid #dde4ec;padding-bottom:4px;margin-bottom:4px}
+  .line{font-size:11.6px;line-height:1.28;color:#1f2d3d;padding:2px 6px;margin:1px 0;border-radius:4px;cursor:pointer;border:1px solid transparent}
+  .line:hover{background:#eef4fa;border-color:#c9d3de}
+  .line.found{background:#fdecea;border-color:#c62828;cursor:default}
+  .line.fine{background:#eef7ee;border-color:#2e7d32;cursor:default}
+  #note{margin-top:8px;height:52px;width:600px;background:#fff;border-left:5px solid #1f3a5f;border-radius:6px;font-size:12.5px;padding:6px 10px;display:flex;align-items:center;color:#1f2d3d}
+  #note.ok{border-left-color:#c62828}#note.fine{border-left-color:#2e7d32}
+  .bar{position:absolute;right:16px;bottom:10px}
+  button{background:#0f8b8d;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:14px;cursor:pointer}
+  button:disabled{background:#9fb0c3;cursor:default}
+  #p2{display:none}
+  .obs{display:flex;align-items:flex-start;gap:8px;background:#fff;border:2px solid #c9d3de;border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:12.5px;line-height:1.35;cursor:pointer;color:#1f2d3d}
+  .obs.sel{border-color:#0f8b8d;background:#eef8f8}
+  .obs .box{flex:0 0 18px;height:18px;border:2px solid #9fb0c3;border-radius:4px;margin-top:1px}
+  .obs.sel .box{background:#0f8b8d;border-color:#0f8b8d}
+  #count{font-size:13px;color:#33475b;position:absolute;left:16px;bottom:16px}
+  #overlay{position:absolute;inset:0;z-index:100;background:#f7f9fb;display:none;flex-direction:column;padding:18px 24px}
+  #overlay h2{font-size:20px;color:#1f3a5f;margin-bottom:8px}
+  .letter{background:#fff;border:1px solid #c9d3de;border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.4;color:#1f2d3d;height:196px;overflow:auto}
+  .letter p{margin-bottom:5px}
+  #comments{margin-top:8px;font-size:12px;line-height:1.4;color:#1f2d3d;height:220px;overflow:auto;padding-right:150px}
+  #comments div{padding:3px 0}
+  .g{color:#2e7d32;font-weight:600}.r{color:#c62828;font-weight:600}
+  #overlay .bar{bottom:14px}
+  header .right{display:flex;align-items:center;gap:8px}
+  .hb{background:transparent;border:1px solid rgba(255,255,255,.65);color:#fff;border-radius:6px;padding:5px 11px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .hb:hover{background:rgba(255,255,255,.18)}
+</style>
+</head>
+<body>
+<div id="game">
+  <header><h1>Il parere dell'RLS sul DVR aggiornato</h1><div class="right"><div class="score" id="hud">Carenze trovate: 0/6</div><button type="button" class="hb" onclick="init()">Ricomincia</button><button type="button" class="hb" onclick="window.close()">Torna al corso</button></div></header>
+
+  <div class="phase" id="p1">
+    <p class="brief"><b>Fase 1.</b> In magazzino sono stati introdotti un algoritmo che assegna turni e ritmi e due robot collaborativi. Hai ricevuto l'estratto aggiornato del documento di valutazione dei rischi. Clicca le parti che ritieni carenti.</p>
+    <div class="doc">
+      <h3>DVR · Reparto magazzino · Sezione sistemi di IA · Aggiornamento del 15 marzo 2026</h3>
+      <div id="lines"></div>
+    </div>
+    <div id="note">Leggi ogni riga e clicca quelle che lasciano un rischio senza valutazione o senza misura.</div>
+    <div class="bar"><button id="toP2" disabled>Scrivi il parere</button></div>
+  </div>
+
+  <div class="phase" id="p2">
+    <p class="brief"><b>Fase 2.</b> Scegli le <b>tre</b> osservazioni più efficaci da mettere per iscritto nel tuo parere.</p>
+    <div id="obsList"></div>
+    <div id="count">Selezionate: 0/3</div>
+    <div class="bar"><button id="compose" disabled>Componi il parere</button></div>
+  </div>
+
+  <div id="overlay">
+    <h2 id="outTitle">Il tuo parere</h2>
+    <div class="letter" id="letter"></div>
+    <div id="comments"></div>
+    <div class="bar"><button onclick="init()">Ricomincia</button></div>
+  </div>
+</div>
+<script>
+const LINES=[
+ {t:"Sistemi introdotti: algoritmo di assegnazione di turni e ritmi (in uso dal 1° febbraio 2026); due robot collaborativi nell'area imballaggio, con limitazione di forza e velocità.",bad:false,n:"Descrizione adeguata: sistemi, date e caratteristiche principali sono indicati."},
+ {t:"Stress lavoro-correlato: si richiama la valutazione del 10 novembre 2025, con esito rischio basso.",bad:true,n:"Carenza: la valutazione dello stress è precedente all'algoritmo, che ha cambiato ritmi, autonomia e controllo. Va aggiornata."},
+ {t:"Ritmi di lavoro: definiti dall'algoritmo in base alla media dei prelievi orari del reparto.",bad:true,n:"Carenza: nessuna verifica che i ritmi calcolati lascino pause e tempi di recupero sostenibili per tutto il turno."},
+ {t:"Robot collaborativi: area di lavoro delimitata a pavimento; pulsanti di arresto di emergenza su ogni postazione; parametri di forza verificati all'installazione.",bad:false,n:"Misure adeguate: delimitazione, arresto di emergenza e verifica dei parametri sono indicati."},
+ {t:"Continuità: il fornitore garantisce il funzionamento continuo dei sistemi.",bad:true,n:"Carenza: manca una procedura per il fermo dei robot o dell'algoritmo, con le misure sostitutive e chi le attiva."},
+ {t:"Allarmi dei robot: considerati affidabili sulla base della documentazione del fornitore.",bad:true,n:"Carenza: falsi allarmi e allarmi mancati non sono considerati, né è prevista una verifica nelle condizioni reali del reparto."},
+ {t:"Formazione: gli addetti sono stati formati all'uso dei nuovi sistemi.",bad:true,n:"Carenza: mancano contenuti, date e verifica dell'addestramento, compreso il comportamento quando il sistema sbaglia."},
+ {t:"Manutenzione: verifica trimestrale dei sensori dei robot, registrata nel libretto della macchina.",bad:false,n:"Misura adeguata: frequenza e registrazione delle verifiche sono indicate."},
+ {t:"Lavoratori esposti: tutti gli addetti del reparto, valutati come gruppo omogeneo.",bad:true,n:"Carenza: nessuna verifica su interinali, neoassunti e lavoratori con caratteristiche diverse, per i quali il sistema può funzionare peggio."},
+ {t:"Consultazione: il presente aggiornamento è trasmesso all'RLS per il parere prima della riunione periodica.",bad:false,n:"Adeguato: la consultazione dell'RLS avviene prima della riunione, come previsto."}
+];
+const OBS=[
+ {t:"Chiedo di aggiornare la valutazione dello stress lavoro-correlato dopo l'introduzione dell'algoritmo, con indicatori raccolti nel reparto.",s:true,c:"Osservazione efficace: individua la carenza e chiede un'azione precisa."},
+ {t:"Chiedo una procedura scritta per il fermo dei robot e dell'algoritmo, con le misure sostitutive e la persona che le attiva.",s:true,c:"Osservazione efficace: copre un rischio rimasto senza misura."},
+ {t:"Chiedo di verificare che i ritmi fissati dall'algoritmo rispettino pause e tempi di recupero, con un periodo di prova condiviso.",s:true,c:"Osservazione efficace: propone una verifica concreta e partecipata."},
+ {t:"Chiedo di registrare falsi allarmi e allarmi mancati dei robot e di riesaminarli in riunione periodica.",s:true,c:"Osservazione efficace: trasforma un limite del sistema in un indicatore da seguire."},
+ {t:"Chiedo il programma di addestramento con contenuti, date, verifica e comportamento da tenere quando il sistema sbaglia.",s:true,c:"Osservazione efficace: rende verificabile la formazione dichiarata."},
+ {t:"Chiedo di ricevere il codice sorgente dell'algoritmo per verificarne il funzionamento.",s:false,c:"Osservazione debole: all'RLS servono finalità, criteri e parametri del sistema, il codice resta fuori dal ruolo."},
+ {t:"Chiedo di vietare l'uso dei robot fino alla fine dell'anno.",s:false,c:"Osservazione debole: l'RLS propone misure, la decisione spetta al datore di lavoro; la richiesta è sproporzionata alle carenze trovate."},
+ {t:"Segnalo che i lavoratori sono preoccupati per le nuove tecnologie.",s:false,c:"Osservazione debole: generica, senza un rischio preciso né una richiesta su cui l'azienda possa rispondere."}
+];
+let found,clicked,sel;
+const $=id=>document.getElementById(id);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function init(){
+  found=0;clicked=new Set();sel=[];
+  $('overlay').style.display='none';$('p2').style.display='none';$('p1').style.display='block';
+  $('hud').textContent='Carenze trovate: 0/6';$('toP2').disabled=true;
+  $('note').className='';$('note').textContent="Leggi ogni riga e clicca quelle che lasciano un rischio senza valutazione o senza misura.";
+  const L=$('lines');L.innerHTML='';
+  LINES.forEach((l,i)=>{const d=document.createElement('div');d.className='line';d.textContent=l.t;d.onclick=()=>clickLine(i,d);L.appendChild(d);});
+  const O=$('obsList');O.innerHTML='';
+  shuffle(OBS.map((_,i)=>i)).forEach(i=>{const d=document.createElement('div');d.className='obs';d.innerHTML='<span class="box"></span><span></span>';d.lastChild.textContent=OBS[i].t;d.onclick=()=>toggle(i,d);O.appendChild(d);});
+  $('count').textContent='Selezionate: 0/3';$('compose').disabled=true;
+}
+function clickLine(i,d){
+  if(clicked.has(i))return;clicked.add(i);const l=LINES[i];
+  if(l.bad){d.classList.add('found');found++;$('note').className='ok';$('hud').textContent='Carenze trovate: '+found+'/6';}
+  else{d.classList.add('fine');$('note').className='fine';}
+  $('note').textContent=l.n;
+  if(found>=4)$('toP2').disabled=false;
+  if(found===6)$('note').textContent=l.n+' Hai trovato tutte le carenze: passa al parere.';
+}
+$('toP2').onclick=()=>{$('p1').style.display='none';$('p2').style.display='block';$('hud').textContent='Carenze trovate: '+found+'/6 · Parere';};
+function toggle(i,d){
+  const k=sel.indexOf(i);
+  if(k>=0){sel.splice(k,1);d.classList.remove('sel');}
+  else if(sel.length<3){sel.push(i);d.classList.add('sel');}
+  $('count').textContent='Selezionate: '+sel.length+'/3';$('compose').disabled=sel.length!==3;
+}
+$('compose').onclick=()=>{
+  const strong=sel.filter(i=>OBS[i].s).length;
+  let html='<p><b>Al datore di lavoro e al responsabile del servizio di prevenzione e protezione</b></p><p>Oggetto: parere dell\'RLS sull\'aggiornamento del documento di valutazione dei rischi, reparto magazzino, sistemi di IA.</p><p>Esaminato l\'estratto ricevuto, formulo le seguenti osservazioni:</p>';
+  sel.forEach((i,n)=>{html+='<p>'+(n+1)+'. '+OBS[i].t+'</p>';});
+  html+='<p>Chiedo che le osservazioni siano discusse nella prossima riunione periodica e che la risposta sia riportata nel verbale.</p><p>Il Rappresentante dei lavoratori per la sicurezza</p>';
+  $('letter').innerHTML=html;
+  let com='<div><b>Carenze individuate nella fase 1: '+found+' su 6.</b></div>';
+  sel.forEach(i=>{com+='<div><span class="'+(OBS[i].s?'g':'r')+'">'+(OBS[i].s?'✔ ':'✖ ')+'</span>'+OBS[i].c+'</div>';});
+  const missing=OBS.map((o,i)=>i).filter(i=>OBS[i].s&&!sel.includes(i));
+  if(missing.length)com+='<div><b>Altre osservazioni efficaci che potevi usare:</b> '+missing.map(i=>OBS[i].t).join(' · ')+'</div>';
+  $('comments').innerHTML=com;
+  $('outTitle').textContent=strong===3?'Parere efficace: tre osservazioni su tre colgono nel segno':'Il tuo parere: '+strong+' osservazioni efficaci su 3';
+  $('overlay').style.display='flex';
+};
+init();
+</script>
+</body>
+</html>
